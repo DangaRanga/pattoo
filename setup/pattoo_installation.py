@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""Script to install patttoo."""
 
 from inspect import ismethod
 import textwrap
@@ -26,17 +27,6 @@ This script is not installed in the "{}" directory. Please fix.\
 
 # Importing installation related packages
 from _pattoo import shared
-
-try:
-    from _pattoo import packages, systemd, configure
-except ModuleNotFoundError:
-    default_pip_dir = '/opt/pattoo-daemon/.python'
-    print('Pattoo shared is missing. Installing pattoo shared')
-    shared._run_script(
-        'python3 -m pip install PattooShared -t {}'.format(default_pip_dir))
-    sys.path.append(default_pip_dir)
-    from _pattoo import packages, systemd, configure
-
 
 
 class _Parser(argparse.ArgumentParser):
@@ -98,9 +88,6 @@ class Parser():
         # Parse "install", return object used for parser
         _Install(subparsers, width=width)
 
-        # Parse "set", return object used for parser
-        _Set(subparsers, width=width)
-
         # Install help if no arguments
         if len(sys.argv) == 1:
             parser.print_help(sys.stderr)
@@ -123,35 +110,6 @@ class _Install():
             'install',
             help=textwrap.fill('Install pattoo.', width=width)
         )
-        # Argument to install pip packages
-        parser.add_argument(
-            '--pip',
-            action='store_true',
-            help=textwrap.fill(
-                'Install pip libraries.', width=width)
-        )
-        # Argument to set up database tables
-        parser.add_argument(
-            '--database',
-            action='store_true',
-            help=textwrap.fill(
-                'Set up database tables.', width=width)
-        )
-        # Argument to install and run system daemons
-        parser.add_argument(
-            '--systemd',
-            action='store_true',
-            help=textwrap.fill(
-                'Install systemd.', width=width)
-        )
-        # Argument to install all components
-        parser.add_argument(
-            '--all',
-            action='store_true',
-            help=textwrap.fill(
-                'Install all.', width=width)
-        )
-
         # Add subparser
         self.subparsers = parser.add_subparsers(dest='qualifier')
 
@@ -170,8 +128,7 @@ class _Install():
                 attribute(width=width)
 
     def all(self, width=80):
-        """
-        CLI command to install all pattoo components
+        """CLI command to install all pattoo components
 
         Args:
             width: Width of the help text string to STDIO before wrapping
@@ -182,18 +139,17 @@ class _Install():
         # Initialize key variables
         parser = self.subparsers.add_parser(
             'all',
-            help=textwrap.fill('Install all components', width=width)
+            help=textwrap.fill('Install all pattoo components', width=width)
         )
 
         # Add arguments
         parser.add_argument(
             '--prompt',
             action='store_true',
-            help='Prompt for user input.')
+            help='Prompt for user input and enable verbose mode.')
 
     def database(self, width=80):
-        """
-        CLI command to create pattoo database tables.
+        """CLI command to create pattoo database tables.
 
         Args:
             width: Width of the help text string to STDIO before wrapping
@@ -208,8 +164,7 @@ class _Install():
         )
 
     def pip(self, width=80):
-        """
-        CLI command to install the necessary pip3 packages.
+        """CLI command to install the necessary pip3 packages.
 
         Args:
             width: Width of the help text string to STDIO before wrapping
@@ -218,14 +173,18 @@ class _Install():
             None
         """
         # Initialize key variables
-        _ = self.subparsers.add_parser(
+        parser = self.subparsers.add_parser(
             'pip',
             help=textwrap.fill('Install PIP', width=width)
         )
 
+        parser.add_argument(
+            '--verbose',
+            action='store_true',
+            help='Enable verbose mode.')
+
     def configuration(self, width=80):
-        """
-        CLI command to configure pattoo.
+        """CLI command to configure pattoo.
 
         Args:
             width: Width of the help text string to STDIO before wrapping
@@ -234,14 +193,19 @@ class _Install():
             None
         """
         # Initialize key variables
-        _ = self.subparsers.add_parser(
+        parser = self.subparsers.add_parser(
             'configuration',
             help=textwrap.fill('Install configuration', width=width)
         )
 
+        # Add arguments
+        parser.add_argument(
+            '--prompt',
+            action='store_true',
+            help='Prompt for user input')
+
     def systemd(self, width=80):
-        """
-        CLI command to install and start the system daemons.
+        """CLI command to install and start the system daemons.
 
         Args:
             width: Width of the help text string to STDIO before wrapping
@@ -254,94 +218,6 @@ class _Install():
             'systemd',
             help=textwrap.fill('Install systemd service files', width=width)
         )
-
-
-class _Set():
-    """Class gathers all CLI 'set' information."""
-
-    def __init__(self, subparsers, width=80):
-        """Intialize the class."""
-        # Initialize key variables
-        parser = subparsers.add_parser(
-            'set',
-            help=textwrap.fill('Set contents of pattoo DB.', width=width)
-        )
-
-        # Add subparser
-        self.subparsers = parser.add_subparsers(dest='qualifier')
-
-        # Execute all methods in this Class
-        for name in dir(self):
-            # Get all attributes of Class
-            attribute = getattr(self, name)
-
-            # Determine whether attribute is a method
-            if ismethod(attribute):
-                # Ignore if method name is reserved (eg. __Init__)
-                if name.startswith('_'):
-                    continue
-
-                # Execute
-                attribute(width=width)
-
-    def language(self, width=80):
-        """Process set language CLI commands.
-
-        Args:
-            width: Width of the help text string to STDIO before wrapping
-
-        Returns:
-            None
-
-        """
-        # Initialize key variables
-        parser = self.subparsers.add_parser(
-            'language',
-            help=textwrap.fill('Set language.', width=width)
-        )
-
-        # Add arguments
-        parser.add_argument(
-            '--code',
-            help='Language code',
-            type=str,
-            required=True)
-
-        parser.add_argument(
-            '--name',
-            help='Language name',
-            type=str,
-            required=True)
-
-    def pair_xlate_group(self, width=80):
-        """Process set pair_xlate_group CLI commands.
-
-        Args:
-            width: Width of the help text string to STDIO before wrapping
-
-        Returns:
-            None
-
-        """
-        # Initialize key variables
-        parser = self.subparsers.add_parser(
-            'key_translation_group',
-            help=textwrap.fill('''\
-Set key-pair translation group information.''', width=width)
-        )
-
-        # Add arguments
-        parser.add_argument(
-            '--idx_pair_xlate_group',
-            help='Key-pair translation group index',
-            type=int,
-            required=True)
-
-        parser.add_argument(
-            '--name',
-            help='Agent group name',
-            type=str,
-            required=True)
 
 
 def main():
@@ -364,47 +240,58 @@ def main():
     if args.action == 'install':
         # Installs all pattoo components
         if args.qualifier == 'all':
-            print('Install everything')
+            print('Installing everything')
             if args.prompt is True:
                 print('Prompt for input')
             else:
                 print('Automatic installation')
-            configure.configure_installation(args.prompt)
-            packages.install_pip3(args.prompt, ROOT_DIR)
+            configure.install(args.prompt)
+            packages.install(ROOT_DIR)
+
             # Import db after pip3 packages are installed
             from _pattoo import db
-            db.create_pattoo_db_tables()
-            systemd.install_systemd()
+            db.install()
+            systemd.install()
+
         # Configures pattoo and sets up database tables
         elif args.qualifier == 'database':
+            print('Installing database tables')
+
             # Assumes defaults unless the all qualifier is used
-            configure.configure_installation(False)
-            packages.install_pip3(False, ROOT_DIR)
+            configure.install(False)
+            packages.install(ROOT_DIR)
+
             # Import db after pip3 packages are installed
             from _pattoo import db
-            db.create_pattoo_db_tables()
+            db.install()
+
         # Installs and starts system daemons
         elif args.qualifier == 'systemd':
-            print('??: Installing systemd')
-            configure.configure_installation(False)
-            # Install pip3 packages, promptless by default
-            packages.install_pip3(False, ROOT_DIR)
-            systemd.install_systemd()
-        # Only installs pip3 packages if they haven't been installed already
+            # Install pip3 packages, verbose mode is disabled by default
+            print('Installing systemd daemons')
+            configure.install(False)
+            packages.install(ROOT_DIR)
+            systemd.install()
+
         elif args.qualifier == 'pip':
-            print('Install pip')
-            packages.install_pip3(False, ROOT_DIR)
+            # Installs additionally required pip3 packages
+            print('Installing pip packages')
+            packages.install(ROOT_DIR, verbose=args.verbose)
+
         # Sets up the configuration for pattoo
         elif args.qualifier == 'configuration':
-            print('Install configuration')
-            configure.configure_installation(False)
-        sys.exit()
-    # Print help if no argument options were triggered
-    parser.print_help(sys.stderr)
-    sys.exit(1)
+            print('Installing configuration')
+            configure.install(args.prompt)
+        # Print help if no argument options were triggered
+        else:
+            parser.print_help(sys.stderr)
+            sys.exit(1)
+
+        # Done
+        print('Done')
 
 
-def installation_checks():
+def check_user():
     """Validate conditions needed to start installation.
 
     Prevents installation if the script is not run as root
@@ -414,14 +301,27 @@ def installation_checks():
 
     Returns:
         True: If conditions for installation are satisfied
+
     """
     if getpass.getuser() != 'travis':
         if getpass.getuser() != 'root':
-            shared._log('You are currently not running the script as root.\
+            shared.log('You are currently not running the script as root.\
 Run as root to continue')
     return True
 
 
 if __name__ == '__main__':
-    installation_checks()
+    check_user()
+
+    # Try except to import pattoo libraries if pattoo shared isn't installed
+    try:
+        from _pattoo import packages, systemd, configure
+    except ModuleNotFoundError:
+        default_pip_dir = '/opt/pattoo-daemon/.python'
+        print('Pattoo shared is missing. Installing pattoo shared')
+        shared.run_script(
+            'python3 -m pip install PattooShared -t {}'.format(default_pip_dir))
+        sys.path.append(default_pip_dir)
+        from _pattoo import packages, systemd, configure
+    # Execute main
     main()
