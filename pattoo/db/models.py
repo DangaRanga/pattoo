@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """pattoo ORM Table classes.
 
 Used to define the tables used in the database.
@@ -59,6 +58,12 @@ class User(BASE):
     password = Column(
         VARBINARY(MAX_KEYPAIR_LENGTH),
         nullable=False, default=None)
+
+    user_type = Column(
+        BIGINT(unsigned=True), nullable=False, server_default='1')
+
+    change_password = Column(
+        BIGINT(unsigned=True), nullable=False, server_default='1')
 
     enabled = Column(
         BIGINT(unsigned=True), nullable=False, server_default='1')
